@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quà Sinh Nhật Tặng Em</title>
+<style>
+html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, #ffdde1, #ee9ca7);
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+}
+canvas {
+    position: absolute;
+    top: 0; left: 0;
+    background: transparent; /* giữ trong suốt để thấy nền hồng */
+}
+.center-text {
+    position: absolute;
+    top: 20%;
+    width: 100%;
+    text-align: center;
+    color: #ff4081;
+    font-size: 3em;
+    font-weight: bold;
+    text-shadow: 0 0 20px white, 0 0 30px pink;
+    animation: glow 2s ease-in-out infinite alternate;
+    z-index: 2;
+}
+@keyframes glow {
+    from { text-shadow: 0 0 10px white, 0 0 20px pink; }
+    to { text-shadow: 0 0 30px white, 0 0 50px pink; }
+}
+.gift-container {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    cursor: pointer;
+}
+.gift-box {
+    width: 160px;
+    position: relative;
+}
+.gift-top {
+    width: 100%;
+    height: 40px;
+    background: #ff69b4;
+    border-radius: 10px 10px 0 0;
+    position: relative;
+    z-index: 2;
+    transition: transform 1s ease-out;
+    transform-origin: bottom center;
+}
+.ribbon {
+    width: 20px;
+    height: 40px;
+    background: #fff;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.gift-body {
+    width: 100%;
+    height: 120px;
+    background: #ff85c1;
+    border-radius: 0 0 10px 10px;
+    position: relative;
+    overflow: visible;
+}
+.banner {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    background: #ff4081;
+    color: white;
+    font-size: 1.6em;
+    padding: 10px 20px;
+    border-radius: 20px;
+    white-space: nowrap;
+    box-shadow: 0 0 20px pink;
+    transition: transform 1.5s ease-out;
+    z-index: 2;
+}
+</style>
+</head>
+<body>
+
+<canvas id="background"></canvas>
+<canvas id="fireworks"></canvas>
+<div class="center-text">🎂 Chúc Mừng Sinh Nhật Em Yêu 💖</div>
+
+<div class="gift-container" id="giftBox">
+    <div class="gift-box">
+        <div class="gift-top" id="giftTop">
+            <div class="ribbon"></div>
+        </div>
+        <div class="gift-body"></div>
+    </div>
+</div>
+
+<div class="banner" id="bannerText">
+💌 Gửi em: Chúc em tuổi mới thật hạnh phúc, luôn xinh đẹp và mãi bên anh 💖
+</div>
+
+<audio id="bgMusic" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2023/03/07/audio_2d73f9f76f.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// --- Canvas setup ---
+const bgCanvas = document.getElementById('background');
+const bgCtx = bgCanvas.getContext('2d');
+const fwCanvas = document.getElementById('fireworks');
+const fwCtx = fwCanvas.getContext('2d');
+
+function resizeCanvas() {
+    bgCanvas.width = fwCanvas.width = window.innerWidth;
+    bgCanvas.height = fwCanvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function random(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+// --- Heart background ---
+let hearts = [];
+class Heart {
+    constructor() {
+        this.x = random(0, bgCanvas.width);
+        this.y = bgCanvas.height + random(0, 100);
+        this.size = random(10, 30);
+        this.speed = random(1, 2);
+        this.alpha = random(0.5, 1);
+    }
+    draw() {
+        bgCtx.save();
+        bgCtx.translate(this.x, this.y);
+        bgCtx.scale(this.size / 30, this.size / 30);
+        bgCtx.beginPath();
+        bgCtx.moveTo(0, 0);
+        bgCtx.bezierCurveTo(0, -3, -5, -15, -15, -15);
+        bgCtx.bezierCurveTo(-35, -15, -35, 10, -35, 10);
+        bgCtx.bezierCurveTo(-35, 25, -20, 40, 0, 55);
+        bgCtx.bezierCurveTo(20, 40, 35, 25, 35, 10);
+        bgCtx.bezierCurveTo(35, 10, 35, -15, 15, -15);
+        bgCtx.bezierCurveTo(5, -15, 0, -3, 0, 0);
+        bgCtx.closePath();
+        bgCtx.fillStyle = `rgba(255, 105, 180, ${this.alpha})`;
+        bgCtx.fill();
+        bgCtx.restore();
+    }
+    update() {
+        this.y -= this.speed;
+        if (this.y < -60) {
+            this.x = random(0, bgCanvas.width);
+            this.y = bgCanvas.height + random(0, 100);
+        }
+    }
+}
+
+// --- Fireworks ---
+let fireworks = [];
+class Firework {
+    constructor(x, y, colors) {
+        this.particles = [];
+        for (let i = 0; i < 80; i++) {
+            this.particles.push({
+                x, y,
+                vx: random(-5, 5),
+                vy: random(-5, 5),
+                alpha: 1,
+                color: colors
+            });
+        }
+    }
+    draw() {
+        // Xóa lớp đen mờ để giữ nền hồng
+        this.particles.forEach(p => {
+            fwCtx.fillStyle = `rgba(${p.color},${p.alpha})`;
+            fwCtx.beginPath();
+            fwCtx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            fwCtx.fill();
+        });
+    }
+    update() {
+        this.particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= 0.02;
+        });
+    }
+}
+
+// --- Animate all ---
+function animate() {
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    hearts.forEach(h => { h.update(); h.draw(); });
+    fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+    fireworks.forEach((f, i) => {
+        f.update(); f.draw();
+        if (f.particles[0].alpha <= 0) fireworks.splice(i, 1);
+    });
+    requestAnimationFrame(animate);
+}
+
+// Init hearts
+for (let i = 0; i < 30; i++) hearts.push(new Heart());
+
+// Fireworks loop
+setInterval(() => {
+    const x = random(0, fwCanvas.width);
+    const y = random(0, fwCanvas.height / 2);
+    const colors = `${Math.floor(random(0,255))},${Math.floor(random(0,255))},${Math.floor(random(0,255))}`;
+    fireworks.push(new Firework(x, y, colors));
+}, 700);
+
+animate();
+
+// --- Gift click ---
+const giftBox = document.getElementById('giftBox');
+const giftTop = document.getElementById('giftTop');
+const bannerText = document.getElementById('bannerText');
+const bgMusic = document.getElementById('bgMusic');
+
+giftBox.addEventListener('click', () => {
+    giftTop.style.transform = 'rotateX(150deg)'; // mở nắp hộp
+    setTimeout(() => {
+        bannerText.style.transform = 'translateX(-50%) scaleX(1)'; // kéo banner ra
+    }, 800);
+    bgMusic.play().catch(()=>{});
+});
+
+document.body.addEventListener('click', () => {
+    bgMusic.play().catch(()=>{});
+}, { once: true });
+</script>
+</body>
+</html>
